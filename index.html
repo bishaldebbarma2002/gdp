@@ -164,25 +164,35 @@
         const resultPanel = document.getElementById('result');
         const iconCircle = document.getElementById('main-icon');
 
-        locateBtn.addEventListener('click', () => {
-            if (!navigator.geolocation) {
-                updateStatus("Unsupported Browser", "#ef4444");
-                return;
-            }
+       locateBtn.addEventListener('click', () => {
+    if (!navigator.geolocation) {
+        updateStatus("Unsupported Browser", "#ef4444");
+        return;
+    }
 
-            updateStatus("Accessing Satellite...", "#2563eb");
-            locateBtn.disabled = true;
-            locateBtn.style.opacity = "0.7";
+    updateStatus("Locating... (Stay near window)", "#2563eb");
+    locateBtn.disabled = true;
 
-            const options = {
-                enableHighAccuracy: true,
-                timeout: 8000,
-                maximumAge: 0
-            };
+    // Try High Accuracy first
+    const fastOptions = {
+        enableHighAccuracy: true,
+        timeout: 6000, // Wait only 6 seconds for GPS
+        maximumAge: 0
+    };
 
-            navigator.geolocation.getCurrentPosition(onSuccess, onError, options);
-        });
-
+    navigator.geolocation.getCurrentPosition(onSuccess, () => {
+        // FALLBACK: If High Accuracy fails/times out, try Low Accuracy
+        updateStatus("GPS weak, using Cell/Wi-Fi...", "#f59e0b");
+        
+        const fallbackOptions = {
+            enableHighAccuracy: false,
+            timeout: 10000, 
+            maximumAge: 60000 // Can use a location up to 1 min old
+        };
+        
+        navigator.geolocation.getCurrentPosition(onSuccess, onError, fallbackOptions);
+    }, fastOptions);
+});
         function onSuccess(pos) {
             const { latitude, longitude, accuracy } = pos.coords;
             
